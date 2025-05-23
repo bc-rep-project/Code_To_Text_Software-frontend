@@ -8,6 +8,7 @@ import App from './App';
 import store from './store';
 import theme from './theme';
 import './index.css';
+import PayPalProvider from './PayPalProvider';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -16,7 +17,9 @@ root.render(
       <BrowserRouter>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <App />
+          <PayPalProvider>
+            <App />
+          </PayPalProvider>
         </ThemeProvider>
       </BrowserRouter>
     </Provider>

@@ -46,9 +46,11 @@ import {
   fetchUserProfile, 
   updateUserProfile, 
   changePassword, 
-  deleteAccount 
+  deleteAccount, 
+  subscribe
 } from '../store/slices/authSlice';
 import { openSnackbar } from '../store/slices/uiSlice';
+import PayPalCheckout from '../components/payments/PayPalCheckout';
 
 // Tab Panel Component
 function TabPanel(props) {
@@ -238,6 +240,30 @@ const Settings = () => {
       .catch(err => {
         dispatch(openSnackbar({
           message: `Failed to update notification settings: ${err.message || 'Unknown error'}`,
+          severity: 'error'
+        }));
+      });
+  };
+  
+  // Handle subscription success
+  const handleSubscriptionSuccess = (paymentDetails) => {
+    // Extract payment token from the PayPal transaction
+    const paymentToken = paymentDetails.id;
+    
+    // Process subscription with backend
+    dispatch(subscribe(paymentToken))
+      .unwrap()
+      .then((response) => {
+        dispatch(openSnackbar({
+          message: 'Subscription successful!',
+          severity: 'success'
+        }));
+        // Refresh user profile to update subscription status
+        dispatch(fetchUserProfile());
+      })
+      .catch((error) => {
+        dispatch(openSnackbar({
+          message: `Subscription failed: ${error.message || 'Unknown error'}`,
           severity: 'error'
         }));
       });
@@ -677,6 +703,17 @@ const Settings = () => {
               </Typography>
             </CardContent>
           </Card>
+          
+          {(user?.subscription?.status !== 'active') && (
+            <Card>
+              <CardHeader title="Upgrade to Premium" />
+              <CardContent>
+                <PayPalCheckout 
+                  onSuccess={handleSubscriptionSuccess}
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabPanel>
         
         {/* Integrations Tab */}

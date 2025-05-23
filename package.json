@@ -8,6 +8,7 @@
     "@mui/icons-material": "^5.14.18",
     "@mui/lab": "^5.0.0-alpha.153",
     "@mui/material": "^5.14.18",
+    "@paypal/react-paypal-js": "^8.8.3",
     "@reduxjs/toolkit": "^1.9.7",
     "axios": "^1.6.2",
     "file-saver": "^2.0.5",
@@ -46,4 +47,4 @@
       "last 1 safari version"
     ]
   }
-} 
+}

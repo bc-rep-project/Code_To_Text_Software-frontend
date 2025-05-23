@@ -97,6 +97,8 @@ Create a `.env` file in the root of the frontend directory with the following va
 REACT_APP_API_URL=http://localhost:8000/api
 REACT_APP_GITHUB_CLIENT_ID=your_github_client_id
 REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+REACT_APP_PAYPAL_CLIENT_ID=test
+REACT_APP_GOOGLE_ANALYTICS_ID=
 ```
 
 ## Deployment
@@ -118,3 +120,47 @@ The frontend is configured for deployment on Vercel. To deploy:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details. 
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies
+
+```bash
+npm install
+```
+
+3. Create a `.env` file with the following content:
+
+```
+REACT_APP_API_URL=http://localhost:8000/api
+REACT_APP_PAYPAL_CLIENT_ID=test
+REACT_APP_GOOGLE_ANALYTICS_ID=
+```
+
+4. For PayPal integration:
+   - For development, you can use the PayPal sandbox environment
+   - Create a PayPal Developer account at https://developer.paypal.com
+   - Create a new app in the PayPal Developer Dashboard
+   - Copy the Client ID to your `.env` file
+   - For production, update `.env.production` with your live Client ID
+
+## Development
+
+Run the development server:
+
+```bash
+npm start
+```
+
+## Building for Production
+
+```bash
+npm run build
+```
+
+## Testing
+
+```bash
+npm test
+``` 
