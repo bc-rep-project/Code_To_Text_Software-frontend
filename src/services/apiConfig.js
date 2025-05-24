@@ -2,7 +2,10 @@ import axios from 'axios';
 
 // Base URL for API - set to match Django backend
 // Use environment variable in production
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+
+// Log the API URL being used (helpful for debugging)
+console.log('API Base URL:', API_BASE_URL);
 
 // Create axios instance with default config
 const api = axios.create({
@@ -10,6 +13,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add timeout to prevent hanging requests
+  timeout: 20000,
 });
 
 // Add request interceptor to include auth token on every request
@@ -32,6 +37,11 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Log errors for debugging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('API Error:', error);
+    }
+    
     // Handle token expiration
     if (error.response && error.response.status === 401) {
       // Clear tokens if they exist
