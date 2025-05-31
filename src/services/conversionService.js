@@ -3,33 +3,35 @@ import { saveAs } from 'file-saver';
 import JSZip from 'jszip';
 
 const conversionService = {
-  // Get all conversions for the current user
+  // Get all conversions for the current user - using projects endpoint
   getConversions: async () => {
-    const response = await api.get('/conversions/');
+    // Since there's no separate conversions endpoint, we'll get projects and filter converted ones
+    const response = await api.get('/projects/');
     return response.data;
   },
   
-  // Get details of a specific conversion
+  // Get details of a specific conversion - using project detail endpoint
   getConversionDetails: async (conversionId) => {
-    const response = await api.get(`/conversions/${conversionId}/`);
+    const response = await api.get(`/projects/${conversionId}/`);
     return response.data;
   },
   
   // Start a new conversion
   startConversion: async (repositoryId, conversionOptions = {}) => {
-    const response = await api.post(`/repositories/${repositoryId}/convert/`, conversionOptions);
+    const response = await api.post(`/projects/${repositoryId}/convert/`, conversionOptions);
     return response.data;
   },
   
-  // Cancel a conversion in progress
+  // Cancel a conversion in progress - this might not be implemented yet
   cancelConversion: async (conversionId) => {
-    const response = await api.post(`/conversions/${conversionId}/cancel/`);
+    // This endpoint might not exist yet in backend, keeping for compatibility
+    const response = await api.post(`/projects/${conversionId}/cancel/`);
     return response.data;
   },
   
-  // Delete a conversion
+  // Delete a conversion - using project delete
   deleteConversion: async (conversionId) => {
-    await api.delete(`/conversions/${conversionId}/`);
+    await api.delete(`/projects/${conversionId}/`);
     return true;
   },
   
@@ -37,11 +39,11 @@ const conversionService = {
   downloadConversion: async (conversionId) => {
     try {
       // Get conversion metadata first to determine format and filename
-      const metadata = await api.get(`/conversions/${conversionId}/`);
-      const conversionName = metadata.data.name || `code2text-conversion-${conversionId}`;
+      const metadata = await api.get(`/projects/${conversionId}/`);
+      const conversionName = metadata.data.project_name || `code2text-conversion-${conversionId}`;
       
       // Download the actual content
-      const response = await api.get(`/conversions/${conversionId}/download/`, {
+      const response = await api.get(`/projects/${conversionId}/download/`, {
         responseType: 'blob'
       });
       
@@ -65,23 +67,25 @@ const conversionService = {
   
   // Save conversion to Google Drive
   saveToGoogleDrive: async (conversionId, driveOptions = {}) => {
-    const response = await api.post(`/conversions/${conversionId}/google-drive/`, driveOptions);
+    const response = await api.post(`/projects/${conversionId}/upload_to_drive/`, driveOptions);
     return response.data;
   },
   
-  // Get conversion progress
+  // Get conversion progress - this might not be implemented yet
   getConversionProgress: async (conversionId) => {
-    const response = await api.get(`/conversions/${conversionId}/progress/`);
+    // This endpoint might not exist yet in backend, keeping for compatibility
+    const response = await api.get(`/projects/${conversionId}/progress/`);
     return response.data;
   },
   
-  // Custom conversion (specific files or directories)
+  // Custom conversion (specific files or directories) - this might not be implemented yet
   customConversion: async (repositoryId, fileSelection, conversionOptions = {}) => {
     const payload = {
       ...conversionOptions,
       files: fileSelection
     };
-    const response = await api.post(`/repositories/${repositoryId}/convert/custom/`, payload);
+    // This endpoint might not exist yet in backend, keeping for compatibility
+    const response = await api.post(`/projects/${repositoryId}/convert/custom/`, payload);
     return response.data;
   },
   
