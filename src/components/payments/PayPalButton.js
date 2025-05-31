@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Alert } from '@mui/material';
 import { subscribe } from '../../store/slices/authSlice';
 import { openSnackbar } from '../../store/slices/uiSlice';
 
@@ -9,7 +9,18 @@ const PayPalButton = ({ onSuccess, onError }) => {
   const dispatch = useDispatch();
   
   // Get PayPal client ID from environment variables
-  const paypalClientId = process.env.REACT_APP_PAYPAL_CLIENT_ID || 'test';
+  const paypalClientId = process.env.REACT_APP_PAYPAL_CLIENT_ID;
+  
+  // Show message if PayPal is not configured
+  if (!paypalClientId || paypalClientId === 'test') {
+    return (
+      <Box sx={{ width: '100%', my: 2 }}>
+        <Alert severity="warning">
+          PayPal payments are not configured. Please contact support for payment options.
+        </Alert>
+      </Box>
+    );
+  }
   
   // Handle successful payment
   const handleApprove = (data, actions) => {

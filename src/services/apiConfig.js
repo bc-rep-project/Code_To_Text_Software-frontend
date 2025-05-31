@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Base URL for API - set to match Django backend
 // Use environment variable in production
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 // Create axios instance with default config
 const api = axios.create({

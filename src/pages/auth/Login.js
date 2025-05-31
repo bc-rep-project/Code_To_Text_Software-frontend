@@ -72,12 +72,12 @@ const Login = () => {
   
   // Handle OAuth login
   const handleGoogleLogin = () => {
-    dispatch(googleAuth())
-      .unwrap()
-      .then(() => {
-        navigate(from, { replace: true });
-      })
-      .catch(() => {});
+    // TODO: Implement Google OAuth flow properly
+    // For now, show a message that it's not available
+    dispatch(openSnackbar({
+      message: 'Google login is coming soon. Please use email/password login.',
+      severity: 'info'
+    }));
   };
   
   const handleGitHubLogin = () => {

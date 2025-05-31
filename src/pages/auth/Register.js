@@ -73,6 +73,9 @@ const Register = () => {
   const handleSubmit = (values, { setSubmitting }) => {
     const { confirmPassword, accept_terms, ...userData } = values;
     
+    // Add password_confirm field for backend validation
+    userData.password_confirm = confirmPassword;
+    
     dispatch(register(userData))
       .unwrap()
       .then(() => {
@@ -85,12 +88,12 @@ const Register = () => {
   
   // Handle OAuth signup
   const handleGoogleSignup = () => {
-    dispatch(googleAuth())
-      .unwrap()
-      .then(() => {
-        navigate('/');
-      })
-      .catch(() => {});
+    // TODO: Implement Google OAuth flow properly
+    // For now, show a message that it's not available
+    dispatch(openSnackbar({
+      message: 'Google signup is coming soon. Please use email/password registration.',
+      severity: 'info'
+    }));
   };
   
   const handleGitHubSignup = () => {

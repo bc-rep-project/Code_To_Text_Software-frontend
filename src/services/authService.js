@@ -40,7 +40,7 @@ const authService = {
   
   // Google OAuth authentication
   googleAuth: async (authCode) => {
-    const response = await api.post('/auth/google/', { code: authCode });
+    const response = await api.post('/auth/google-oauth/', { code: authCode });
     
     // Store token and user in localStorage
     if (response.data.token) {
