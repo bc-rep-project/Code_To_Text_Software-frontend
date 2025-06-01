@@ -38,7 +38,19 @@ export const projectService = {
   // Create new project
   createProject: async (projectData) => {
     try {
-      const response = await apiClient.post('/projects/', projectData);
+      // Map frontend field names to backend field names
+      const backendData = {
+        project_name: projectData.name,
+        source_type: projectData.source_type || 'upload', // Default to upload if not specified
+        description: projectData.description, // Include if provided (even though backend doesn't use it yet)
+      };
+      
+      // Add github_repo_url if it's a github project
+      if (projectData.source_type === 'github' && projectData.github_repo_url) {
+        backendData.github_repo_url = projectData.github_repo_url;
+      }
+      
+      const response = await apiClient.post('/projects/', backendData);
       return {
         success: true,
         project: response.data.project,

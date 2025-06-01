@@ -12,7 +12,9 @@ const Projects = () => {
   const [createLoading, setCreateLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    source_type: 'upload', // Default to upload
+    github_repo_url: ''
   });
 
   const navigate = useNavigate();
@@ -38,7 +40,7 @@ const Projects = () => {
 
   const resetForm = () => {
     console.log('Resetting form data');
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', source_type: 'upload', github_repo_url: '' });
   };
 
   const openCreateModal = () => {
@@ -68,6 +70,21 @@ const Projects = () => {
       console.log('Validation failed: Project name is empty');
       showNotification('Project name is required', 'error');
       return;
+    }
+
+    // Additional validation for GitHub projects
+    if (formData.source_type === 'github') {
+      if (!formData.github_repo_url || !formData.github_repo_url.trim()) {
+        showNotification('GitHub repository URL is required for GitHub projects', 'error');
+        return;
+      }
+      
+      // Basic GitHub URL validation
+      const githubUrlPattern = /^https:\/\/github\.com\/[\w\-\.]+\/[\w\-\.]+\/?$/;
+      if (!githubUrlPattern.test(formData.github_repo_url.trim())) {
+        showNotification('Please enter a valid GitHub repository URL (e.g., https://github.com/username/repository)', 'error');
+        return;
+      }
     }
 
     setCreateLoading(true);
@@ -242,6 +259,43 @@ const Projects = () => {
                   autoComplete="off"
                 />
               </div>
+              
+              <div className="form-group">
+                <label htmlFor="source_type">Source Type</label>
+                <select
+                  id="source_type"
+                  name="source_type"
+                  value={formData.source_type}
+                  onChange={(e) => {
+                    console.log('Source type changed:', e.target.value);
+                    setFormData({ ...formData, source_type: e.target.value });
+                  }}
+                  disabled={createLoading}
+                  required
+                >
+                  <option value="upload">Upload</option>
+                  <option value="github">GitHub</option>
+                </select>
+              </div>
+              
+              {formData.source_type === 'github' && (
+                <div className="form-group">
+                  <label htmlFor="github_repo_url">GitHub Repository URL</label>
+                  <input
+                    type="text"
+                    id="github_repo_url"
+                    name="github_repo_url"
+                    value={formData.github_repo_url}
+                    onChange={(e) => {
+                      console.log('GitHub repo URL changed:', e.target.value);
+                      setFormData({ ...formData, github_repo_url: e.target.value });
+                    }}
+                    placeholder="Enter GitHub repository URL"
+                    disabled={createLoading}
+                    required
+                  />
+                </div>
+              )}
               
               <div className="modal-actions">
                 <button 
