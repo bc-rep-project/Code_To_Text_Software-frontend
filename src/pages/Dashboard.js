@@ -32,8 +32,8 @@ const Dashboard = () => {
         
         // Calculate stats
         const totalProjects = result.projects.length;
-        const completedProjects = result.projects.filter(p => p.status === 'completed').length;
-        const activeProjects = result.projects.filter(p => ['in_progress', 'scanning', 'converting'].includes(p.status)).length;
+        const completedProjects = result.projects.filter(p => ['converted', 'completed'].includes(p.status)).length;
+        const activeProjects = result.projects.filter(p => ['scanning', 'converting', 'uploading_to_drive'].includes(p.status)).length;
         const totalFiles = result.projects.reduce((sum, p) => sum + (p.file_count || 0), 0);
         
         setStats({
@@ -58,11 +58,19 @@ const Dashboard = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      'pending_scan': { label: 'Pending Scan', class: 'status-created' },
+      'scanning': { label: 'Scanning', class: 'status-scanning' },
+      'scanned': { label: 'Scanned', class: 'status-progress' },
+      'conversion_pending': { label: 'Conversion Pending', class: 'status-progress' },
+      'converting': { label: 'Converting', class: 'status-converting' },
+      'converted': { label: 'Converted', class: 'status-completed' },
+      'uploading_to_drive': { label: 'Uploading to Drive', class: 'status-converting' },
+      'completed': { label: 'Completed', class: 'status-completed' },
+      'error': { label: 'Error', class: 'status-failed' },
+      'monitoring_github': { label: 'Monitoring GitHub', class: 'status-progress' },
+      // Legacy status mappings for compatibility
       'created': { label: 'Created', class: 'status-created' },
       'in_progress': { label: 'In Progress', class: 'status-progress' },
-      'scanning': { label: 'Scanning', class: 'status-scanning' },
-      'converting': { label: 'Converting', class: 'status-converting' },
-      'completed': { label: 'Completed', class: 'status-completed' },
       'failed': { label: 'Failed', class: 'status-failed' }
     };
     

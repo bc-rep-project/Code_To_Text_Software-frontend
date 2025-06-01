@@ -66,6 +66,12 @@ const ProjectDetail = () => {
   };
 
   const handleScan = async () => {
+    // Check if project can be scanned
+    if (!['pending_scan', 'error'].includes(project.status)) {
+      showNotification(`Cannot scan project in status: ${project.status}`, 'error');
+      return;
+    }
+
     setScanning(true);
     try {
       const result = await projectService.scanProject(id);
@@ -83,6 +89,12 @@ const ProjectDetail = () => {
   };
 
   const handleConvert = async () => {
+    // Check if project can be converted
+    if (!['scanned', 'error'].includes(project.status)) {
+      showNotification(`Cannot convert project in status: ${project.status}. Please scan the project first.`, 'error');
+      return;
+    }
+
     setConverting(true);
     try {
       const result = await projectService.convertProject(id);
@@ -130,11 +142,19 @@ const ProjectDetail = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      'pending_scan': { label: 'Pending Scan', class: 'status-created' },
+      'scanning': { label: 'Scanning', class: 'status-scanning' },
+      'scanned': { label: 'Scanned', class: 'status-progress' },
+      'conversion_pending': { label: 'Conversion Pending', class: 'status-progress' },
+      'converting': { label: 'Converting', class: 'status-converting' },
+      'converted': { label: 'Converted', class: 'status-completed' },
+      'uploading_to_drive': { label: 'Uploading to Drive', class: 'status-converting' },
+      'completed': { label: 'Completed', class: 'status-completed' },
+      'error': { label: 'Error', class: 'status-failed' },
+      'monitoring_github': { label: 'Monitoring GitHub', class: 'status-progress' },
+      // Legacy status mappings for compatibility
       'created': { label: 'Created', class: 'status-created' },
       'in_progress': { label: 'In Progress', class: 'status-progress' },
-      'scanning': { label: 'Scanning', class: 'status-scanning' },
-      'converting': { label: 'Converting', class: 'status-converting' },
-      'completed': { label: 'Completed', class: 'status-completed' },
       'failed': { label: 'Failed', class: 'status-failed' }
     };
     
@@ -266,11 +286,14 @@ const ProjectDetail = () => {
             <p>Analyze uploaded files and prepare for conversion</p>
             <button 
               onClick={handleScan}
-              disabled={scanning || project.file_count === 0}
+              disabled={scanning || !['pending_scan', 'error'].includes(project?.status)}
               className="btn btn-primary"
             >
               {scanning ? <LoadingSpinner size="small" message="" /> : '🔍 Start Scan'}
             </button>
+            {!['pending_scan', 'error'].includes(project?.status) && (
+              <small className="status-hint">Project already scanned</small>
+            )}
           </div>
 
           <div className="action-card">
@@ -278,11 +301,16 @@ const ProjectDetail = () => {
             <p>Convert your code files to readable text format</p>
             <button 
               onClick={handleConvert}
-              disabled={converting || project.status === 'created'}
+              disabled={converting || !['scanned', 'error'].includes(project?.status)}
               className="btn btn-primary"
             >
               {converting ? <LoadingSpinner size="small" message="" /> : '🔄 Start Conversion'}
             </button>
+            {!['scanned', 'error'].includes(project?.status) && (
+              <small className="status-hint">
+                {project?.status === 'pending_scan' ? 'Please scan the project first' : `Cannot convert in status: ${project?.status}`}
+              </small>
+            )}
           </div>
 
           <div className="action-card">
@@ -290,11 +318,14 @@ const ProjectDetail = () => {
             <p>Download the converted text files</p>
             <button 
               onClick={handleDownload}
-              disabled={project.status !== 'completed'}
+              disabled={!['converted', 'completed'].includes(project?.status)}
               className="btn btn-success"
             >
               📥 Download
             </button>
+            {!['converted', 'completed'].includes(project?.status) && (
+              <small className="status-hint">Results not ready yet</small>
+            )}
           </div>
         </div>
       </div>
