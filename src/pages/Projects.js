@@ -36,10 +36,36 @@ const Projects = () => {
     }
   };
 
+  const resetForm = () => {
+    console.log('Resetting form data');
+    setFormData({ name: '', description: '' });
+  };
+
+  const openCreateModal = () => {
+    console.log('Opening create modal');
+    resetForm();
+    setShowCreateModal(true);
+  };
+
+  const closeCreateModal = () => {
+    console.log('Closing create modal');
+    setShowCreateModal(false);
+    resetForm();
+  };
+
   const handleCreateProject = async (e) => {
     e.preventDefault();
     
-    if (!formData.name.trim()) {
+    // Debug logging
+    console.log('Form submission triggered');
+    console.log('Form data:', formData);
+    console.log('Project name value:', formData.name);
+    console.log('Project name length:', formData.name.length);
+    console.log('Project name trimmed:', formData.name.trim());
+    console.log('Project name trimmed length:', formData.name.trim().length);
+    
+    if (!formData.name || !formData.name.trim()) {
+      console.log('Validation failed: Project name is empty');
       showNotification('Project name is required', 'error');
       return;
     }
@@ -47,18 +73,21 @@ const Projects = () => {
     setCreateLoading(true);
     
     try {
+      console.log('Sending project data to API:', formData);
       const result = await projectService.createProject(formData);
+      
+      console.log('API response:', result);
       
       if (result.success) {
         showNotification(result.message || 'Project created successfully!', 'success');
-        setShowCreateModal(false);
-        setFormData({ name: '', description: '' });
+        closeCreateModal();
         fetchProjects(); // Refresh the list
         navigate(`/projects/${result.project.id}`);
       } else {
         showNotification(result.message || 'Failed to create project', 'error');
       }
     } catch (error) {
+      console.error('Error creating project:', error);
       showNotification('Error creating project', 'error');
     } finally {
       setCreateLoading(false);
@@ -102,7 +131,7 @@ const Projects = () => {
         </div>
         <button 
           className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
+          onClick={openCreateModal}
         >
           <span>+</span>
           New Project
@@ -116,7 +145,7 @@ const Projects = () => {
           <p>Create your first project to start converting code to text.</p>
           <button 
             className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
+            onClick={openCreateModal}
           >
             Create Your First Project
           </button>
@@ -163,13 +192,13 @@ const Projects = () => {
 
       {/* Create Project Modal */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div className="modal-overlay" onClick={closeCreateModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Create New Project</h2>
               <button 
                 className="modal-close"
-                onClick={() => setShowCreateModal(false)}
+                onClick={closeCreateModal}
               >
                 ×
               </button>
@@ -181,11 +210,19 @@ const Projects = () => {
                 <input
                   type="text"
                   id="name"
+                  name="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    console.log('Name input changed:', e.target.value);
+                    setFormData({ ...formData, name: e.target.value });
+                  }}
+                  onBlur={(e) => {
+                    console.log('Name input blurred:', e.target.value);
+                  }}
                   placeholder="Enter project name"
                   disabled={createLoading}
                   required
+                  autoComplete="off"
                 />
               </div>
               
@@ -193,11 +230,16 @@ const Projects = () => {
                 <label htmlFor="description">Description</label>
                 <textarea
                   id="description"
+                  name="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) => {
+                    console.log('Description input changed:', e.target.value);
+                    setFormData({ ...formData, description: e.target.value });
+                  }}
                   placeholder="Enter project description (optional)"
                   rows="3"
                   disabled={createLoading}
+                  autoComplete="off"
                 />
               </div>
               
@@ -205,7 +247,7 @@ const Projects = () => {
                 <button 
                   type="button" 
                   className="btn btn-secondary"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={closeCreateModal}
                   disabled={createLoading}
                 >
                   Cancel
