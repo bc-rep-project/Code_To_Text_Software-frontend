@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { showNotification } from '../../components/common/NotificationManager';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import './Auth.css';
 
 const Register = () => {
@@ -12,7 +13,7 @@ const Register = () => {
     first_name: '',
     last_name: '',
     password: '',
-    password_confirm: ''
+    confirm_password: ''
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -30,12 +31,12 @@ const Register = () => {
 
   const validateForm = () => {
     if (!formData.username || !formData.email || !formData.first_name || 
-        !formData.last_name || !formData.password || !formData.password_confirm) {
+        !formData.last_name || !formData.password || !formData.confirm_password) {
       showNotification('Please fill in all fields', 'error');
       return false;
     }
 
-    if (formData.password !== formData.password_confirm) {
+    if (formData.password !== formData.confirm_password) {
       showNotification('Passwords do not match', 'error');
       return false;
     }
@@ -57,18 +58,17 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     
     try {
-      const result = await register(formData);
+      const { confirm_password, ...registrationData } = formData;
+      const result = await register(registrationData);
       
       if (result.success) {
-        showNotification(result.message || 'Registration successful!', 'success');
-        navigate('/dashboard');
+        showNotification(result.message || 'Registration successful! Please log in.', 'success');
+        navigate('/login');
       } else {
         showNotification(result.message || 'Registration failed', 'error');
       }
@@ -79,12 +79,16 @@ const Register = () => {
     }
   };
 
+  const handleGoogleSuccess = () => {
+    navigate('/dashboard');
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
           <h1>Create Account</h1>
-          <p>Join Code2Text and start converting your code</p>
+          <p>Join Code2Text and start converting your code today</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -102,7 +106,6 @@ const Register = () => {
                 required
               />
             </div>
-
             <div className="form-group">
               <label htmlFor="last_name">Last Name</label>
               <input
@@ -155,7 +158,7 @@ const Register = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a strong password (min 8 characters)"
+                placeholder="Create a password (8+ characters)"
                 disabled={loading}
                 required
               />
@@ -170,13 +173,13 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password_confirm">Confirm Password</label>
+            <label htmlFor="confirm_password">Confirm Password</label>
             <div className="password-input-container">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
-                id="password_confirm"
-                name="password_confirm"
-                value={formData.password_confirm}
+                id="confirm_password"
+                name="confirm_password"
+                value={formData.confirm_password}
                 onChange={handleChange}
                 placeholder="Confirm your password"
                 disabled={loading}
@@ -212,14 +215,11 @@ const Register = () => {
         </div>
 
         <div className="social-auth">
-          <button 
-            className="social-button google"
+          <GoogleAuthButton 
+            text="Continue with Google"
+            onSuccess={handleGoogleSuccess}
             disabled={loading}
-            onClick={() => showNotification('Google signup coming soon!', 'info')}
-          >
-            <span>🔍</span>
-            Continue with Google
-          </button>
+          />
         </div>
       </div>
     </div>

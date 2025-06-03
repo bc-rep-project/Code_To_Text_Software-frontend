@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { showNotification } from '../../components/common/NotificationManager';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import GoogleAuthButton from '../../components/auth/GoogleAuthButton';
 import './Auth.css';
 
 const Login = () => {
@@ -47,6 +48,10 @@ const Login = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -115,14 +120,11 @@ const Login = () => {
         </div>
 
         <div className="social-auth">
-          <button 
-            className="social-button google"
+          <GoogleAuthButton 
+            text="Continue with Google"
+            onSuccess={handleGoogleSuccess}
             disabled={loading}
-            onClick={() => showNotification('Google login coming soon!', 'info')}
-          >
-            <span>🔍</span>
-            Continue with Google
-          </button>
+          />
         </div>
       </div>
     </div>

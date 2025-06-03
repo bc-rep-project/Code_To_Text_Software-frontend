@@ -70,6 +70,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Google OAuth login function
+  const loginWithGoogle = async (googleAccessToken) => {
+    try {
+      const response = await apiClient.post('/auth/google-oauth/', {
+        access_token: googleAccessToken
+      });
+      
+      const { token, user: userData, message } = response.data;
+
+      if (token && userData) {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userData', JSON.stringify(userData));
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
+
+      return { success: true, message: message || 'Google login successful!' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.message || 'Google login failed' 
+      };
+    }
+  };
+
   const register = async (userData) => {
     try {
       const response = await apiClient.post('/auth/register/', userData);
@@ -131,15 +156,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (userData) => {
+    setUser(userData);
+    localStorage.setItem('userData', JSON.stringify(userData));
+  };
+
   const value = {
     user,
     loading,
     isAuthenticated,
     login,
+    loginWithGoogle,
     register,
     logout,
     updateProfile,
     changePassword,
+    updateUser,
     fetchUserDetails
   };
 
