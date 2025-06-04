@@ -392,7 +392,7 @@ const ProjectDetail = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            {project.name}
+            {project.project_name}
           </motion.h1>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
@@ -415,7 +415,7 @@ const ProjectDetail = () => {
             <h3>📋 Project Details</h3>
             <div className="info-item">
               <span className="label">Description:</span>
-              <span className="value">{project.description || 'No description provided'}</span>
+              <span className="value">No description available</span>
             </div>
             <div className="info-item">
               <span className="label">Created:</span>
