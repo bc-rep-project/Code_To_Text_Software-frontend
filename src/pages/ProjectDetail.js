@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 import { projectService } from '../services/projectService';
-import { showNotification } from '../components/common/NotificationManager';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { showNotification, showAsyncNotification } from '../components/common/EnhancedNotificationManager';
+import EnhancedLoadingSpinner, { 
+  UploadLoadingSpinner, 
+  ScanLoadingSpinner, 
+  ConvertLoadingSpinner, 
+  DownloadLoadingSpinner 
+} from '../components/common/EnhancedLoadingSpinner';
 import './ProjectDetail.css';
 
 const ProjectDetail = () => {
@@ -14,19 +22,37 @@ const ProjectDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
+    // Initialize AOS
+    AOS.init({
+      duration: 800,
+      easing: 'ease-out-cubic',
+      once: true,
+      offset: 100
+    });
+
     fetchProject();
   }, [id]);
 
   const fetchProject = async () => {
     try {
-      const result = await projectService.getProject(id);
+      const projectPromise = projectService.getProject(id);
+      
+      const result = await showAsyncNotification(
+        projectPromise,
+        {
+          loading: 'Loading project details...',
+          success: 'Project loaded successfully!',
+          error: 'Failed to load project'
+        }
+      );
+      
       if (result.success) {
         setProject(result.project);
       } else {
-        showNotification(result.message || 'Failed to load project', 'error');
         navigate('/projects');
       }
     } catch (error) {
@@ -40,6 +66,13 @@ const ProjectDetail = () => {
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
     setSelectedFiles(files);
+    
+    if (files.length > 0) {
+      showNotification(
+        `${files.length} file${files.length > 1 ? 's' : ''} selected for upload`,
+        'info'
+      );
+    }
   };
 
   const handleUpload = async () => {
@@ -50,13 +83,29 @@ const ProjectDetail = () => {
 
     setUploading(true);
     try {
-      const result = await projectService.uploadCode(id, selectedFiles);
+      const uploadPromise = projectService.uploadCode(id, selectedFiles);
+      
+      const result = await showAsyncNotification(
+        uploadPromise,
+        {
+          loading: `Uploading ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}...`,
+          success: '🎉 Files uploaded successfully!',
+          error: 'Upload failed'
+        }
+      );
+      
       if (result.success) {
-        showNotification(result.message || 'Files uploaded successfully!', 'success');
+        showNotification(
+          'Files uploaded successfully! 🚀', 
+          'success', 
+          { celebration: true }
+        );
         setSelectedFiles([]);
+        // Reset file input
+        const fileInput = document.getElementById('file-upload');
+        if (fileInput) fileInput.value = '';
+        
         fetchProject(); // Refresh project data
-      } else {
-        showNotification(result.message || 'Upload failed', 'error');
       }
     } catch (error) {
       showNotification('Error uploading files', 'error');
@@ -74,12 +123,24 @@ const ProjectDetail = () => {
 
     setScanning(true);
     try {
-      const result = await projectService.scanProject(id);
+      const scanPromise = projectService.scanProject(id);
+      
+      const result = await showAsyncNotification(
+        scanPromise,
+        {
+          loading: 'Scanning project files...',
+          success: '🔍 Project scan started successfully!',
+          error: 'Scan failed'
+        }
+      );
+      
       if (result.success) {
-        showNotification(result.message || 'Scan started successfully!', 'success');
+        showNotification(
+          'Scan started successfully! 🔍', 
+          'success', 
+          { celebration: true }
+        );
         fetchProject(); // Refresh project data
-      } else {
-        showNotification(result.message || 'Scan failed', 'error');
       }
     } catch (error) {
       showNotification('Error starting scan', 'error');
@@ -97,12 +158,24 @@ const ProjectDetail = () => {
 
     setConverting(true);
     try {
-      const result = await projectService.convertProject(id);
+      const convertPromise = projectService.convertProject(id);
+      
+      const result = await showAsyncNotification(
+        convertPromise,
+        {
+          loading: 'Converting code to text...',
+          success: '✨ Conversion started successfully!',
+          error: 'Conversion failed'
+        }
+      );
+      
       if (result.success) {
-        showNotification(result.message || 'Conversion started successfully!', 'success');
+        showNotification(
+          'Conversion started successfully! ✨', 
+          'success', 
+          { celebration: true }
+        );
         fetchProject(); // Refresh project data
-      } else {
-        showNotification(result.message || 'Conversion failed', 'error');
       }
     } catch (error) {
       showNotification('Error starting conversion', 'error');
@@ -112,27 +185,56 @@ const ProjectDetail = () => {
   };
 
   const handleDownload = async () => {
+    setDownloading(true);
     try {
-      const result = await projectService.downloadProject(id);
+      const downloadPromise = projectService.downloadProject(id);
+      
+      const result = await showAsyncNotification(
+        downloadPromise,
+        {
+          loading: 'Preparing download...',
+          success: '📥 Download started!',
+          error: 'Download failed'
+        }
+      );
+      
       if (result.success) {
-        showNotification(result.message || 'Download started!', 'success');
-      } else {
-        showNotification(result.message || 'Download failed', 'error');
+        showNotification(
+          'Download started! 📥', 
+          'success', 
+          { celebration: true }
+        );
       }
     } catch (error) {
       showNotification('Error downloading project', 'error');
+    } finally {
+      setDownloading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+    const confirmed = window.confirm('Are you sure you want to delete this project? This action cannot be undone.');
+    
+    if (confirmed) {
       try {
-        const result = await projectService.deleteProject(id);
+        const deletePromise = projectService.deleteProject(id);
+        
+        const result = await showAsyncNotification(
+          deletePromise,
+          {
+            loading: 'Deleting project...',
+            success: '🗑️ Project deleted successfully!',
+            error: 'Delete failed'
+          }
+        );
+        
         if (result.success) {
-          showNotification(result.message || 'Project deleted successfully!', 'success');
+          showNotification(
+            'Project deleted successfully! 🗑️', 
+            'success', 
+            { celebration: false }
+          );
           navigate('/projects');
-        } else {
-          showNotification(result.message || 'Delete failed', 'error');
         }
       } catch (error) {
         showNotification('Error deleting project', 'error');
@@ -142,24 +244,35 @@ const ProjectDetail = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      'pending_scan': { label: 'Pending Scan', class: 'status-created' },
-      'scanning': { label: 'Scanning', class: 'status-scanning' },
-      'scanned': { label: 'Scanned', class: 'status-progress' },
-      'conversion_pending': { label: 'Conversion Pending', class: 'status-progress' },
-      'converting': { label: 'Converting', class: 'status-converting' },
-      'converted': { label: 'Converted', class: 'status-completed' },
-      'uploading_to_drive': { label: 'Uploading to Drive', class: 'status-converting' },
-      'completed': { label: 'Completed', class: 'status-completed' },
-      'error': { label: 'Error', class: 'status-failed' },
-      'monitoring_github': { label: 'Monitoring GitHub', class: 'status-progress' },
+      'pending_scan': { label: 'Pending Scan', class: 'status-created', color: '#6b7280', icon: '⏳' },
+      'scanning': { label: 'Scanning', class: 'status-scanning', color: '#f59e0b', icon: '🔍' },
+      'scanned': { label: 'Scanned', class: 'status-progress', color: '#3b82f6', icon: '✅' },
+      'conversion_pending': { label: 'Conversion Pending', class: 'status-progress', color: '#3b82f6', icon: '⏳' },
+      'converting': { label: 'Converting', class: 'status-converting', color: '#8b5cf6', icon: '⚡' },
+      'converted': { label: 'Converted', class: 'status-completed', color: '#22c55e', icon: '✨' },
+      'uploading_to_drive': { label: 'Uploading to Drive', class: 'status-converting', color: '#06b6d4', icon: '☁️' },
+      'completed': { label: 'Completed', class: 'status-completed', color: '#22c55e', icon: '🎉' },
+      'error': { label: 'Error', class: 'status-failed', color: '#ef4444', icon: '❌' },
+      'monitoring_github': { label: 'Monitoring GitHub', class: 'status-progress', color: '#3b82f6', icon: '👁️' },
       // Legacy status mappings for compatibility
-      'created': { label: 'Created', class: 'status-created' },
-      'in_progress': { label: 'In Progress', class: 'status-progress' },
-      'failed': { label: 'Failed', class: 'status-failed' }
+      'created': { label: 'Created', class: 'status-created', color: '#6b7280', icon: '📝' },
+      'in_progress': { label: 'In Progress', class: 'status-progress', color: '#3b82f6', icon: '⚡' },
+      'failed': { label: 'Failed', class: 'status-failed', color: '#ef4444', icon: '❌' }
     };
     
-    const config = statusConfig[status] || { label: status, class: 'status-default' };
-    return <span className={`status-badge ${config.class}`}>{config.label}</span>;
+    const config = statusConfig[status] || { label: status, class: 'status-default', color: '#6b7280', icon: '❓' };
+    return (
+      <motion.span 
+        className={`status-badge ${config.class}`}
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.2, duration: 0.3 }}
+        style={{ backgroundColor: config.color }}
+      >
+        <span className="status-icon">{config.icon}</span>
+        {config.label}
+      </motion.span>
+    );
   };
 
   const formatDate = (dateString) => {
@@ -172,164 +285,430 @@ const ProjectDetail = () => {
     });
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        duration: 0.6,
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    }
+  };
+
+  const buttonVariants = {
+    hover: {
+      scale: 1.05,
+      transition: {
+        duration: 0.2
+      }
+    },
+    tap: {
+      scale: 0.95
+    }
+  };
+
   if (loading) {
-    return <LoadingSpinner message="Loading project..." />;
+    return (
+      <EnhancedLoadingSpinner 
+        message="Loading project details..." 
+        type="default"
+        size="large"
+        fullScreen={true}
+      />
+    );
   }
 
   if (!project) {
     return (
-      <div className="error-state">
+      <motion.div 
+        className="error-state"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          animate={{ 
+            rotateY: [0, 360],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ 
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          style={{ fontSize: '4rem', marginBottom: '1rem' }}
+        >
+          😵
+        </motion.div>
         <h2>Project not found</h2>
-        <button onClick={() => navigate('/projects')} className="btn btn-primary">
+        <motion.button 
+          onClick={() => navigate('/projects')} 
+          className="btn btn-primary"
+          variants={buttonVariants}
+          whileHover="hover"
+          whileTap="tap"
+        >
           Back to Projects
-        </button>
-      </div>
+        </motion.button>
+      </motion.div>
     );
   }
 
   return (
-    <div className="project-detail">
+    <motion.div 
+      className="project-detail"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div className="project-header">
-        <div className="header-content">
-          <button 
-            onClick={() => navigate('/projects')}
-            className="back-button"
+      <motion.div className="project-header" variants={itemVariants}>
+        <motion.button 
+          onClick={() => navigate('/projects')}
+          className="back-button"
+          data-aos="fade-right"
+          whileHover={{ scale: 1.1, x: -5 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          ← Back to Projects
+        </motion.button>
+        
+        <div className="header-content" data-aos="fade-up">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
           >
-            ← Back to Projects
-          </button>
-          <div className="project-title">
-            <h1>{project.name}</h1>
+            {project.name}
+          </motion.h1>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4, duration: 0.3 }}
+          >
             {getStatusBadge(project.status)}
-          </div>
-          <p className="project-description">
-            {project.description || 'No description provided'}
-          </p>
+          </motion.div>
         </div>
-        <div className="header-actions">
-          {project.status === 'completed' && (
-            <button 
-              onClick={handleDownload}
-              className="btn btn-success"
-            >
-              📥 Download Results
-            </button>
-          )}
-          <button 
-            onClick={handleDelete}
-            className="btn btn-error"
-          >
-            🗑️ Delete Project
-          </button>
-        </div>
-      </div>
+      </motion.div>
 
       {/* Project Info */}
-      <div className="project-info">
-        <div className="info-grid">
-          <div className="info-item">
-            <span className="info-label">Created:</span>
-            <span className="info-value">{formatDate(project.created_at)}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Updated:</span>
-            <span className="info-value">{formatDate(project.updated_at)}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Files:</span>
-            <span className="info-value">{project.file_count || 0}</span>
-          </div>
-          <div className="info-item">
-            <span className="info-label">Status:</span>
-            <span className="info-value">{getStatusBadge(project.status)}</span>
-          </div>
+      <motion.div className="project-info-section" variants={itemVariants}>
+        <div className="info-grid" data-aos="fade-up">
+          <motion.div 
+            className="info-card"
+            whileHover={{ scale: 1.02, y: -5 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h3>📋 Project Details</h3>
+            <div className="info-item">
+              <span className="label">Description:</span>
+              <span className="value">{project.description || 'No description provided'}</span>
+            </div>
+            <div className="info-item">
+              <span className="label">Created:</span>
+              <span className="value">{formatDate(project.created_at)}</span>
+            </div>
+            {project.updated_at && (
+              <div className="info-item">
+                <span className="label">Updated:</span>
+                <span className="value">{formatDate(project.updated_at)}</span>
+              </div>
+            )}
+            <div className="info-item">
+              <span className="label">Source Type:</span>
+              <span className="value">
+                {project.source_type === 'github' ? '🔗 GitHub Repository' : '📁 File Upload'}
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="info-card"
+            whileHover={{ scale: 1.02, y: -5 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h3>📊 Statistics</h3>
+            <div className="stats-grid">
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className="stat-value">{project.file_count || 0}</span>
+                <span className="stat-label">Files</span>
+              </motion.div>
+              <motion.div 
+                className="stat-item"
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <span className="stat-value">{project.size || 'N/A'}</span>
+                <span className="stat-label">Size</span>
+              </motion.div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
       {/* File Upload Section */}
-      <div className="section">
-        <h2>Upload Code Files</h2>
-        <div className="upload-area">
-          <input
-            type="file"
-            multiple
-            onChange={handleFileSelect}
-            className="file-input"
-            accept=".js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.h,.css,.html,.php,.rb,.go,.rs,.swift,.kt,.scala,.sh,.sql,.json,.xml,.yaml,.yml,.md,.txt"
-          />
-          {selectedFiles.length > 0 && (
-            <div className="selected-files">
-              <h4>Selected Files ({selectedFiles.length}):</h4>
-              <ul>
-                {selectedFiles.map((file, index) => (
-                  <li key={index}>{file.name} ({(file.size / 1024).toFixed(1)} KB)</li>
-                ))}
-              </ul>
-            </div>
-          )}
-          <button 
-            onClick={handleUpload}
-            disabled={uploading || selectedFiles.length === 0}
-            className="btn btn-primary"
+      {project.source_type === 'upload' && (
+        <motion.div className="upload-section" variants={itemVariants}>
+          <motion.div 
+            className="section-card"
+            data-aos="slide-right"
           >
-            {uploading ? <LoadingSpinner size="small" message="" /> : '📤 Upload Files'}
-          </button>
-        </div>
-      </div>
+            <h2>📁 Upload Files</h2>
+            <div className="upload-content">
+              <motion.div 
+                className="file-input-wrapper"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <input
+                  type="file"
+                  id="file-upload"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="file-input"
+                  accept=".js,.jsx,.ts,.tsx,.py,.java,.cpp,.c,.h,.cs,.php,.rb,.go,.rs,.swift,.kt,.scala,.dart"
+                  disabled={uploading}
+                />
+                <label htmlFor="file-upload" className="file-input-label">
+                  <motion.span
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    📤
+                  </motion.span>
+                  {selectedFiles.length > 0 
+                    ? `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`
+                    : 'Choose files to upload'
+                  }
+                </label>
+              </motion.div>
+              
+              <AnimatePresence>
+                {selectedFiles.length > 0 && (
+                  <motion.div 
+                    className="selected-files"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <h4>Selected Files:</h4>
+                    <motion.ul>
+                      {selectedFiles.map((file, index) => (
+                        <motion.li 
+                          key={index}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.1 }}
+                        >
+                          📄 {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                        </motion.li>
+                      ))}
+                    </motion.ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              
+              <motion.button
+                className="btn btn-primary"
+                onClick={handleUpload}
+                disabled={selectedFiles.length === 0 || uploading}
+                variants={buttonVariants}
+                whileHover={selectedFiles.length > 0 && !uploading ? "hover" : {}}
+                whileTap={selectedFiles.length > 0 && !uploading ? "tap" : {}}
+              >
+                {uploading ? (
+                  <UploadLoadingSpinner message="" />
+                ) : (
+                  <>
+                    <motion.span
+                      animate={{ rotate: uploading ? 360 : 0 }}
+                      transition={{ duration: 1, repeat: uploading ? Infinity : 0, ease: "linear" }}
+                    >
+                      📤
+                    </motion.span>
+                    Upload Files
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* Actions Section */}
-      <div className="section">
-        <h2>Project Actions</h2>
-        <div className="actions-grid">
-          <div className="action-card">
-            <h3>1. Scan Project</h3>
-            <p>Analyze uploaded files and prepare for conversion</p>
-            <button 
+      <motion.div className="actions-section" variants={itemVariants}>
+        <motion.div 
+          className="section-card"
+          data-aos="slide-left"
+        >
+          <h2>🛠️ Project Actions</h2>
+          <div className="actions-grid">
+            {/* Scan Button */}
+            <motion.button
+              className={`action-btn scan-btn ${['pending_scan', 'error'].includes(project.status) ? 'enabled' : 'disabled'}`}
               onClick={handleScan}
-              disabled={scanning || !['pending_scan', 'error'].includes(project?.status)}
-              className="btn btn-primary"
+              disabled={!['pending_scan', 'error'].includes(project.status) || scanning}
+              variants={buttonVariants}
+              whileHover={['pending_scan', 'error'].includes(project.status) && !scanning ? "hover" : {}}
+              whileTap={['pending_scan', 'error'].includes(project.status) && !scanning ? "tap" : {}}
+              data-aos="zoom-in"
+              data-aos-delay="100"
             >
-              {scanning ? <LoadingSpinner size="small" message="" /> : '🔍 Start Scan'}
-            </button>
-            {!['pending_scan', 'error'].includes(project?.status) && (
-              <small className="status-hint">Project already scanned</small>
-            )}
-          </div>
+              {scanning ? (
+                <ScanLoadingSpinner message="" />
+              ) : (
+                <>
+                  <motion.span
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="action-icon"
+                  >
+                    🔍
+                  </motion.span>
+                  <div>
+                    <h3>Scan Project</h3>
+                    <p>Analyze and scan project files</p>
+                  </div>
+                </>
+              )}
+            </motion.button>
 
-          <div className="action-card">
-            <h3>2. Convert to Text</h3>
-            <p>Convert your code files to readable text format</p>
-            <button 
+            {/* Convert Button */}
+            <motion.button
+              className={`action-btn convert-btn ${['scanned', 'error'].includes(project.status) ? 'enabled' : 'disabled'}`}
               onClick={handleConvert}
-              disabled={converting || !['scanned', 'error'].includes(project?.status)}
-              className="btn btn-primary"
+              disabled={!['scanned', 'error'].includes(project.status) || converting}
+              variants={buttonVariants}
+              whileHover={['scanned', 'error'].includes(project.status) && !converting ? "hover" : {}}
+              whileTap={['scanned', 'error'].includes(project.status) && !converting ? "tap" : {}}
+              data-aos="zoom-in"
+              data-aos-delay="200"
             >
-              {converting ? <LoadingSpinner size="small" message="" /> : '🔄 Start Conversion'}
-            </button>
-            {!['scanned', 'error'].includes(project?.status) && (
-              <small className="status-hint">
-                {project?.status === 'pending_scan' ? 'Please scan the project first' : `Cannot convert in status: ${project?.status}`}
-              </small>
-            )}
-          </div>
+              {converting ? (
+                <ConvertLoadingSpinner message="" />
+              ) : (
+                <>
+                  <motion.span
+                    animate={{ rotate: [0, 180, 360] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                    className="action-icon"
+                  >
+                    ⚡
+                  </motion.span>
+                  <div>
+                    <h3>Convert to Text</h3>
+                    <p>Convert code files to text format</p>
+                  </div>
+                </>
+              )}
+            </motion.button>
 
-          <div className="action-card">
-            <h3>3. Download Results</h3>
-            <p>Download the converted text files</p>
-            <button 
+            {/* Download Button */}
+            <motion.button
+              className={`action-btn download-btn ${['converted', 'completed'].includes(project.status) ? 'enabled' : 'disabled'}`}
               onClick={handleDownload}
-              disabled={!['converted', 'completed'].includes(project?.status)}
-              className="btn btn-success"
+              disabled={!['converted', 'completed'].includes(project.status) || downloading}
+              variants={buttonVariants}
+              whileHover={['converted', 'completed'].includes(project.status) && !downloading ? "hover" : {}}
+              whileTap={['converted', 'completed'].includes(project.status) && !downloading ? "tap" : {}}
+              data-aos="zoom-in"
+              data-aos-delay="300"
             >
-              📥 Download
-            </button>
-            {!['converted', 'completed'].includes(project?.status) && (
-              <small className="status-hint">Results not ready yet</small>
-            )}
+              {downloading ? (
+                <DownloadLoadingSpinner message="" />
+              ) : (
+                <>
+                  <motion.span
+                    animate={{ y: [0, -5, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="action-icon"
+                  >
+                    📥
+                  </motion.span>
+                  <div>
+                    <h3>Download Result</h3>
+                    <p>Download converted text files</p>
+                  </div>
+                </>
+              )}
+            </motion.button>
+
+            {/* Delete Button */}
+            <motion.button
+              className="action-btn delete-btn enabled"
+              onClick={handleDelete}
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+              data-aos="zoom-in"
+              data-aos-delay="400"
+            >
+              <motion.span
+                whileHover={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 0.3 }}
+                className="action-icon"
+              >
+                🗑️
+              </motion.span>
+              <div>
+                <h3>Delete Project</h3>
+                <p>Permanently delete this project</p>
+              </div>
+            </motion.button>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+
+      {/* Project Progress */}
+      {(['scanning', 'converting', 'uploading_to_drive'].includes(project.status)) && (
+        <motion.div 
+          className="progress-section" 
+          variants={itemVariants}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          data-aos="fade-up"
+        >
+          <motion.div className="section-card">
+            <h2>⚡ Operation in Progress</h2>
+            <motion.div 
+              className="progress-indicator"
+              animate={{ scale: [1, 1.05, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            >
+              <div className="progress-text">
+                {project.status === 'scanning' && '🔍 Scanning project files...'}
+                {project.status === 'converting' && '⚡ Converting code to text...'}
+                {project.status === 'uploading_to_drive' && '☁️ Uploading to Google Drive...'}
+              </div>
+              <motion.div 
+                className="progress-bar"
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                transition={{ duration: 3, repeat: Infinity }}
+              />
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
 

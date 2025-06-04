@@ -1,0 +1,197 @@
+/* Enhanced Loading Spinner Styles */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-overlay.fullscreen.with-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px 30px;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.4),
+    transparent
+  );
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.loading-content.small {
+  padding: 20px;
+  min-width: 120px;
+}
+
+.loading-content.large {
+  padding: 50px 40px;
+  min-width: 280px;
+}
+
+.loading-content.xl {
+  padding: 60px 50px;
+  min-width: 320px;
+}
+
+.spinner-container {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-message {
+  text-align: center;
+  color: #374151;
+  font-size: 16px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.loading-content.small .loading-message {
+  font-size: 14px;
+}
+
+.loading-content.large .loading-message {
+  font-size: 18px;
+}
+
+.loading-content.xl .loading-message {
+  font-size: 20px;
+}
+
+.loading-dots {
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .loading-content {
+    background: rgba(31, 41, 55, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .loading-message {
+    color: #e5e7eb;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .loading-content {
+    margin: 20px;
+    padding: 30px 25px;
+    min-width: 180px;
+  }
+  
+  .loading-content.large,
+  .loading-content.xl {
+    padding: 40px 30px;
+    min-width: 200px;
+  }
+  
+  .loading-message {
+    font-size: 15px;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .loading-content::before,
+  .loading-dots {
+    animation: none;
+  }
+  
+  .spinner-container {
+    animation: none;
+  }
+}
+
+/* Loading state variations for specific operations */
+.loading-content[data-type="upload"] {
+  border-left: 4px solid #22c55e;
+}
+
+.loading-content[data-type="scan"] {
+  border-left: 4px solid #f59e0b;
+}
+
+.loading-content[data-type="convert"] {
+  border-left: 4px solid #8b5cf6;
+}
+
+.loading-content[data-type="download"] {
+  border-left: 4px solid #06b6d4;
+}
+
+/* Pulse animation for urgent states */
+.loading-content.urgent {
+  animation: urgentPulse 1s infinite alternate;
+}
+
+@keyframes urgentPulse {
+  from {
+    box-shadow: 
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  to {
+    box-shadow: 
+      0 20px 25px -5px rgba(239, 68, 68, 0.2),
+      0 10px 10px -5px rgba(239, 68, 68, 0.1);
+  }
+} 
