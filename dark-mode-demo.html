@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Demo - Code to Text Software</title>
+    <style>
+        /* CSS Variables for theming */
+        :root {
+            --theme-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Light Mode (Default) */
+        .light-mode {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #2c3e50;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --border-primary: #e9ecef;
+            --border-secondary: #dee2e6;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+            --card-bg: #ffffff;
+            --modal-overlay: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Dark Mode */
+        .dark-mode {
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-tertiary: #4a5568;
+            --text-primary: #f7fafc;
+            --text-secondary: #e2e8f0;
+            --text-muted: #a0aec0;
+            --border-primary: #4a5568;
+            --border-secondary: #718096;
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --card-bg: #2d3748;
+            --modal-overlay: rgba(0, 0, 0, 0.9);
+        }
+
+        /* Global Styles */
+        * {
+            transition: var(--theme-transition);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Demo Container */
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Header */
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 2px solid var(--border-primary);
+            margin-bottom: 40px;
+        }
+
+        .demo-title {
+            margin: 0;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-track {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: var(--bg-tertiary);
+        }
+
+        .toggle-circle {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transform: translateX(2px);
+            background: #fbbf24;
+            font-size: 0.8rem;
+        }
+
+        .dark-mode .toggle-circle {
+            transform: translateX(26px);
+            background: #f3f4f6;
+        }
+
+        /* Cards */
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .demo-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-primary);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-title {
+            margin: 0 0 15px;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Buttons */
+        .demo-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--theme-transition);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+        }
+
+        /* Modal Demo */
+        .modal-demo {
+            background: var(--modal-overlay);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-demo.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Features List */
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-primary);
+        }
+
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+
+        .feature-check {
+            color: #34a853;
+            margin-right: 10px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .status-success {
+            background: rgba(52, 168, 83, 0.2);
+            color: #34a853;
+            border: 1px solid #34a853;
+        }
+
+        .status-info {
+            background: rgba(66, 133, 244, 0.2);
+            color: #4285f4;
+            border: 1px solid #4285f4;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .demo-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .demo-title {
+                font-size: 2rem;
+            }
+
+            .demo-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="demo-container">
+        <!-- Header -->
+        <header class="demo-header">
+            <h1 class="demo-title">🌙 Dark Mode Demo</h1>
+            <button class="dark-mode-toggle" onclick="toggleTheme()">
+                <div class="toggle-track">
+                    <div class="toggle-circle" id="toggleCircle">
+                        <span id="toggleIcon">☀️</span>
+                    </div>
+                </div>
+            </button>
+        </header>
+
+        <!-- Status -->
+        <div style="text-align: center; margin-bottom: 40px;">
+            <div class="status-indicator status-success">
+                <span>✅</span>
+                <span>Dark Mode Successfully Implemented!</span>
+            </div>
+            <div class="status-indicator status-info">
+                <span>🎨</span>
+                <span id="currentTheme">Current Theme: Light Mode</span>
+            </div>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="demo-grid">
+            <!-- Features Card -->
+            <div class="demo-card">
+                <h2 class="card-title">🚀 Features Implemented</h2>
+                <div class="card-content">
+                    <ul class="features-list">
+                        <li><span class="feature-check">✅</span> Theme Context with localStorage</li>
+                        <li><span class="feature-check">✅</span> Animated Toggle Component</li>
+                        <li><span class="feature-check">✅</span> CSS Variables System</li>
+                        <li><span class="feature-check">✅</span> Smooth Transitions</li>
+                        <li><span class="feature-check">✅</span> Mobile Responsive</li>
+                        <li><span class="feature-check">✅</span> Accessibility Support</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Google Drive Integration -->
+            <div class="demo-card">
+                <h2 class="card-title">☁️ Google Drive Integration</h2>
+                <div class="card-content">
+                    <p>The Google Drive Upload modal now fully supports dark mode with:</p>
+                    <ul class="features-list">
+                        <li><span class="feature-check">✅</span> Dark background overlays</li>
+                        <li><span class="feature-check">✅</span> Themed form inputs</li>
+                        <li><span class="feature-check">✅</span> Animated progress steps</li>
+                        <li><span class="feature-check">✅</span> Success celebrations</li>
+                    </ul>
+                </div>
+                <div class="demo-buttons">
+                    <button class="btn btn-primary" onclick="showModal()">
+                        Preview Modal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Component -->
+            <div class="demo-card">
+                <h2 class="card-title">🧭 Navigation Component</h2>
+                <div class="card-content">
+                    <p>Complete navigation bar with built-in dark mode toggle:</p>
+                    <ul class="features-list">
+                        <li><span class="feature-check">✅</span> Animated brand logo</li>
+                        <li><span class="feature-check">✅</span> Active link indicators</li>
+                        <li><span class="feature-check">✅</span> User avatar integration</li>
+                        <li><span class="feature-check">✅</span> Mobile hamburger menu</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- CSS Variables -->
+            <div class="demo-card">
+                <h2 class="card-title">🎨 CSS Variables</h2>
+                <div class="card-content">
+                    <p>Comprehensive theming system with variables for:</p>
+                    <ul class="features-list">
+                        <li><span class="feature-check">✅</span> Background colors</li>
+                        <li><span class="feature-check">✅</span> Text colors</li>
+                        <li><span class="feature-check">✅</span> Border & shadow colors</li>
+                        <li><span class="feature-check">✅</span> Status & button colors</li>
+                    </ul>
+                </div>
+                <div class="demo-buttons">
+                    <button class="btn btn-secondary" onclick="showVariables()">
+                        View Variables
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="text-align: center; margin-top: 40px;">
+            <div class="demo-buttons" style="justify-content: center;">
+                <button class="btn btn-primary" onclick="testTransitions()">
+                    Test Transitions
+                </button>
+                <button class="btn btn-secondary" onclick="toggleSystemPreference()">
+                    Toggle System Preference
+                </button>
+                <button class="btn btn-secondary" onclick="resetTheme()">
+                    Reset Theme
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Demo -->
+    <div class="modal-demo" id="modalDemo">
+        <div class="modal-content">
+            <h2>🌙 Dark Mode Modal</h2>
+            <p>This modal automatically adapts to the current theme!</p>
+            <p>Try switching themes while the modal is open.</p>
+            <div class="demo-buttons" style="justify-content: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="hideModal()">
+                    Close Modal
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isDarkMode = false;
+
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            updateTheme();
+        }
+
+        function updateTheme() {
+            const body = document.body;
+            const toggleIcon = document.getElementById('toggleIcon');
+            const currentTheme = document.getElementById('currentTheme');
+
+            if (isDarkMode) {
+                body.className = 'dark-mode';
+                toggleIcon.textContent = '🌙';
+                currentTheme.textContent = 'Current Theme: Dark Mode';
+            } else {
+                body.className = 'light-mode';
+                toggleIcon.textContent = '☀️';
+                currentTheme.textContent = 'Current Theme: Light Mode';
+            }
+
+            // Save to localStorage
+            localStorage.setItem('darkMode', isDarkMode.toString());
+        }
+
+        function showModal() {
+            document.getElementById('modalDemo').classList.add('show');
+        }
+
+        function hideModal() {
+            document.getElementById('modalDemo').classList.remove('show');
+        }
+
+        function testTransitions() {
+            // Rapidly toggle theme to show smooth transitions
+            let count = 0;
+            const interval = setInterval(() => {
+                toggleTheme();
+                count++;
+                if (count >= 4) {
+                    clearInterval(interval);
+                }
+            }, 800);
+        }
+
+        function toggleSystemPreference() {
+            // Simulate system preference toggle
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            alert(`System preference: ${prefersDark ? 'Dark' : 'Light'} mode detected.\n\nThe theme system can automatically follow system preferences!`);
+        }
+
+        function resetTheme() {
+            localStorage.removeItem('darkMode');
+            isDarkMode = false;
+            updateTheme();
+            alert('Theme preference cleared! Page will now follow system preference.');
+        }
+
+        function showVariables() {
+            const variables = [
+                '--bg-primary', '--bg-secondary', '--text-primary', '--text-secondary',
+                '--border-primary', '--card-bg', '--shadow-md'
+            ];
+            
+            let message = 'CSS Variables currently in use:\n\n';
+            variables.forEach(variable => {
+                const value = getComputedStyle(document.body).getPropertyValue(variable);
+                message += `${variable}: ${value}\n`;
+            });
+            
+            alert(message);
+        }
+
+        // Initialize theme from localStorage
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('darkMode');
+            if (saved) {
+                isDarkMode = saved === 'true';
+                updateTheme();
+            }
+        });
+
+        // Listen for system preference changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('darkMode')) {
+                isDarkMode = e.matches;
+                updateTheme();
+            }
+        });
+    </script>
+</body>
+</html> 

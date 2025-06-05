@@ -12,6 +12,8 @@ import EnhancedLoadingSpinner, {
   DownloadLoadingSpinner 
 } from '../components/common/EnhancedLoadingSpinner';
 import GoogleDriveUpload from '../components/GoogleDriveUpload';
+import DarkModeToggle from '../components/DarkModeToggle';
+import '../styles/themes.css';
 import './ProjectDetail.css';
 
 const ProjectDetail = () => {
