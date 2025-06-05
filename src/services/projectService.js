@@ -154,20 +154,58 @@ export const projectService = {
     }
   },
 
-  // Upload to Google Drive
-  uploadToGoogleDrive: async (projectId) => {
+  // Upload to Google Drive - Enhanced with OAuth flow
+  uploadToGoogleDrive: async (projectId, params = {}) => {
     try {
-      const response = await apiClient.post(`/projects/${projectId}/upload_to_drive/`);
+      const response = await apiClient.post(`/projects/${projectId}/upload_to_drive/`, params);
       return {
         success: true,
+        data: response.data,
         message: response.data.message,
-        driveLink: response.data.drive_folder_link
+        status: response.data.status,
+        driveLink: response.data.drive_folder_link,
+        driveFolderId: response.data.drive_folder_id,
+        oauthUrl: response.data.oauth_url,
+        verificationCode: response.data.dev_verification_code, // Development only
+        instructions: response.data.instructions,
+        requiredField: response.data.required_field,
+        requiredFields: response.data.required_fields
       };
     } catch (error) {
       return {
         success: false,
-        message: error.message
+        message: error.response?.data?.error || error.message,
+        status: 'error'
       };
+    }
+  },
+
+  // Google Drive OAuth Flow Steps
+  googleDriveFlow: {
+    // Step 1: Initialize OAuth flow
+    initiate: async (projectId) => {
+      return projectService.uploadToGoogleDrive(projectId);
+    },
+
+    // Step 2: Submit email for verification
+    submitEmail: async (projectId, googleEmail) => {
+      return projectService.uploadToGoogleDrive(projectId, { google_email: googleEmail });
+    },
+
+    // Step 3: Submit verification code
+    submitVerificationCode: async (projectId, googleEmail, verificationCode) => {
+      return projectService.uploadToGoogleDrive(projectId, {
+        google_email: googleEmail,
+        verification_code: verificationCode
+      });
+    },
+
+    // Step 4: Submit OAuth tokens
+    submitOAuthTokens: async (projectId, accessToken, refreshToken = null) => {
+      return projectService.uploadToGoogleDrive(projectId, {
+        google_access_token: accessToken,
+        google_refresh_token: refreshToken
+      });
     }
   },
 

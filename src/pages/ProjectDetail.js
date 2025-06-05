@@ -11,6 +11,7 @@ import EnhancedLoadingSpinner, {
   ConvertLoadingSpinner, 
   DownloadLoadingSpinner 
 } from '../components/common/EnhancedLoadingSpinner';
+import GoogleDriveUpload from '../components/GoogleDriveUpload';
 import './ProjectDetail.css';
 
 const ProjectDetail = () => {
@@ -24,6 +25,7 @@ const ProjectDetail = () => {
   const [converting, setConverting] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [showGoogleDriveModal, setShowGoogleDriveModal] = useState(false);
 
   useEffect(() => {
     // Initialize AOS
@@ -210,6 +212,26 @@ const ProjectDetail = () => {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleGoogleDriveUpload = () => {
+    // Check if project has been converted
+    if (!['converted', 'completed'].includes(project.status)) {
+      showNotification(`Cannot upload to Google Drive. Project status: ${project.status}. Please convert the project first.`, 'error');
+      return;
+    }
+
+    setShowGoogleDriveModal(true);
+  };
+
+  const handleGoogleDriveUploadComplete = (result) => {
+    showNotification(
+      'Project uploaded to Google Drive successfully! 🎉',
+      'success',
+      { celebration: true, duration: 10000 }
+    );
+    setShowGoogleDriveModal(false);
+    fetchProject(); // Refresh project data to show updated status
   };
 
   const handleDelete = async () => {
@@ -651,6 +673,30 @@ const ProjectDetail = () => {
               )}
             </motion.button>
 
+            {/* Google Drive Upload Button */}
+            <motion.button
+              className={`action-btn google-drive-btn ${['converted', 'completed'].includes(project.status) ? 'enabled' : 'disabled'}`}
+              onClick={handleGoogleDriveUpload}
+              disabled={!['converted', 'completed'].includes(project.status) || downloading}
+              variants={buttonVariants}
+              whileHover={['converted', 'completed'].includes(project.status) && !downloading ? "hover" : {}}
+              whileTap={['converted', 'completed'].includes(project.status) && !downloading ? "tap" : {}}
+              data-aos="zoom-in"
+              data-aos-delay="400"
+            >
+              <motion.span
+                whileHover={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 0.3 }}
+                className="action-icon"
+              >
+                💾
+              </motion.span>
+              <div>
+                <h3>Upload to Google Drive</h3>
+                <p>Upload converted text files to Google Drive</p>
+              </div>
+            </motion.button>
+
             {/* Delete Button */}
             <motion.button
               className="action-btn delete-btn enabled"
@@ -659,7 +705,7 @@ const ProjectDetail = () => {
               whileHover="hover"
               whileTap="tap"
               data-aos="zoom-in"
-              data-aos-delay="400"
+              data-aos-delay="500"
             >
               <motion.span
                 whileHover={{ rotate: [0, -10, 10, 0] }}
@@ -707,6 +753,14 @@ const ProjectDetail = () => {
             </motion.div>
           </motion.div>
         </motion.div>
+      )}
+
+      {showGoogleDriveModal && (
+        <GoogleDriveUpload
+          projectId={id}
+          onUploadComplete={handleGoogleDriveUploadComplete}
+          onClose={() => setShowGoogleDriveModal(false)}
+        />
       )}
     </motion.div>
   );
