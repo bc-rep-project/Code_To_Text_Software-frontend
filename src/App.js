@@ -4,11 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import EnhancedLoadingSpinner from './components/common/EnhancedLoadingSpinner';
 import { NotificationToaster } from './components/common/EnhancedNotificationManager';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import './styles/global.css';
+import './styles/themes.css';
 
 // Lazy load components for better performance
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -155,86 +157,88 @@ const AppLayout = ({ children }) => {
 // Main App Component
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <AppLayout>
-          <AnimatePresence mode="wait">
-            <Routes>
-              {/* Public Routes */}
-              <Route 
-                path="/" 
-                element={
-                  <PublicRoute>
-                    <LandingPage />
-                  </PublicRoute>
-                } 
-              />
-              <Route 
-                path="/login" 
-                element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                } 
-              />
-              <Route 
-                path="/register" 
-                element={
-                  <PublicRoute>
-                    <Register />
-                  </PublicRoute>
-                } 
-              />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <AppLayout>
+            <AnimatePresence mode="wait">
+              <Routes>
+                {/* Public Routes */}
+                <Route 
+                  path="/" 
+                  element={
+                    <PublicRoute>
+                      <LandingPage />
+                    </PublicRoute>
+                  } 
+                />
+                <Route 
+                  path="/login" 
+                  element={
+                    <PublicRoute>
+                      <Login />
+                    </PublicRoute>
+                  } 
+                />
+                <Route 
+                  path="/register" 
+                  element={
+                    <PublicRoute>
+                      <Register />
+                    </PublicRoute>
+                  } 
+                />
 
-              {/* Protected Routes */}
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/projects" 
-                element={
-                  <ProtectedRoute>
-                    <Projects />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/projects/:id" 
-                element={
-                  <ProtectedRoute>
-                    <ProjectDetail />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/profile" 
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/subscription" 
-                element={
-                  <ProtectedRoute>
-                    <Subscription />
-                  </ProtectedRoute>
-                } 
-              />
+                {/* Protected Routes */}
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/projects" 
+                  element={
+                    <ProtectedRoute>
+                      <Projects />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/projects/:id" 
+                  element={
+                    <ProtectedRoute>
+                      <ProjectDetail />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/subscription" 
+                  element={
+                    <ProtectedRoute>
+                      <Subscription />
+                    </ProtectedRoute>
+                  } 
+                />
 
-              {/* Catch all route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AnimatePresence>
-        </AppLayout>
-      </Router>
-    </AuthProvider>
+                {/* Catch all route */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </AnimatePresence>
+          </AppLayout>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

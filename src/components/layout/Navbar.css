@@ -279,4 +279,15 @@
   .user-name {
     display: none;
   }
+}
+
+/* Dark Mode Toggle in Navbar */
+.navbar-theme-toggle {
+  margin-right: 1rem;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 } 

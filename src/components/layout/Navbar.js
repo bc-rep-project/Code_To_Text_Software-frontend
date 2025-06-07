@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { showNotification } from '../common/NotificationManager';
+import DarkModeToggle from '../DarkModeToggle';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -54,6 +55,9 @@ const Navbar = () => {
 
         {/* User Profile Dropdown */}
         <div className="navbar-user">
+          {/* Dark Mode Toggle */}
+          <DarkModeToggle size="small" className="navbar-theme-toggle" />
+          
           <button
             className="user-button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
