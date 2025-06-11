@@ -154,30 +154,38 @@ export const projectService = {
     }
   },
 
-  // Upload to Google Drive - Enhanced with OAuth flow
+  // Upload to Google Drive with proper AllAuth integration
   uploadToGoogleDrive: async (projectId, params = {}) => {
     try {
       const response = await apiClient.post(`/projects/${projectId}/upload_to_drive/`, params);
+      
+      console.log('Google Drive Upload Response:', response.data);
+      
       return {
         success: true,
         data: response.data,
         message: response.data.message,
-        status: response.data.status,
+        status: response.data.status || 'success',
         driveLink: response.data.drive_folder_link,
         driveFolderId: response.data.drive_folder_id,
-        oauthUrl: response.data.oauth_url,
-        verificationCode: response.data.dev_verification_code, // Development only
-        instructions: response.data.instructions,
-        requiredField: response.data.required_field,
-        requiredFields: response.data.required_fields
+        // For OAuth flow
+        actionRequired: response.data.action_required,
+        authUrl: response.data.auth_url
       };
     } catch (error) {
+      console.error('Google Drive Upload Error:', error);
       return {
         success: false,
         message: error.response?.data?.error || error.message,
         status: 'error'
       };
     }
+  },
+
+  // Simplified Google Drive OAuth helper
+  initiateGoogleAuth: (authUrl) => {
+    // Open Google OAuth in a new window/tab
+    window.open(authUrl, '_blank', 'width=500,height=600');
   },
 
   // Google Drive OAuth Flow Steps
