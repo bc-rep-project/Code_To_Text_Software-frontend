@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import projectService from '../services/projectService';
 import { showNotification } from './common/EnhancedNotificationManager';
+import { useGoogleAuth } from '../hooks/useGoogleAuth';
+import LoadingSpinner from './common/LoadingSpinner';
 import './GoogleDriveUpload.css';
 
 const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
@@ -9,9 +11,10 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [driveLink, setDriveLink] = useState('');
-  const [authUrl, setAuthUrl] = useState('');
-  const [authWindow, setAuthWindow] = useState(null);
-  const [pollTimer, setPollTimer] = useState(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
+  
+  // Use the same Google auth hook as login/register
+  const { isGoogleLoaded, signInWithGoogle } = useGoogleAuth();
 
   const steps = [
     { id: 1, title: 'Initialize', description: 'Checking authentication status' },
@@ -20,24 +23,9 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
     { id: 4, title: 'Complete', description: 'Upload completed successfully' }
   ];
 
-  // Cleanup function to prevent memory leaks
-  const cleanup = useCallback(() => {
-    if (pollTimer) {
-      clearInterval(pollTimer);
-      setPollTimer(null);
-    }
-    if (authWindow && !authWindow.closed) {
-      authWindow.close();
-      setAuthWindow(null);
-    }
-  }, [pollTimer, authWindow]);
-
   useEffect(() => {
     initializeUpload();
-    
-    // Cleanup on unmount
-    return cleanup;
-  }, [projectId, cleanup]);
+  }, [projectId]);
 
   const initializeUpload = async () => {
     setLoading(true);
@@ -47,7 +35,7 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
       if (result.success) {
         if (result.actionRequired === 'GOOGLE_OAUTH_REQUIRED') {
           // User needs to authenticate with Google
-          setAuthUrl(result.authUrl);
+          setNeedsAuth(true);
           setUploadStep(2);
           showNotification('Google authentication required', 'info');
         } else if (result.driveLink) {
@@ -67,91 +55,44 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
     setLoading(false);
   };
 
-  const handleGoogleAuth = () => {
-    if (!authUrl) {
-      showNotification('Authentication URL not available. Please try again.', 'error');
+  const handleGoogleAuth = async () => {
+    if (!isGoogleLoaded) {
+      showNotification('Google authentication is not ready. Please try again.', 'error');
       return;
     }
 
-    // Close any existing popup first
-    cleanup();
-
+    setLoading(true);
+    
     try {
-      // Open Google OAuth in new window with specific features
-      const popup = window.open(
-        authUrl, 
-        'google-oauth', 
-        'width=500,height=600,scrollbars=yes,resizable=yes,status=yes,location=yes'
-      );
-
-      if (!popup) {
-        showNotification('Popup blocked. Please allow popups for this site and try again.', 'error');
-        return;
-      }
-
-      setAuthWindow(popup);
+      showNotification('Opening Google authentication...', 'info');
       
-      // Monitor popup status with improved polling
-      const timer = setInterval(() => {
-        try {
-          // Check if popup is closed
-          if (popup.closed) {
-            clearInterval(timer);
-            setPollTimer(null);
-            setAuthWindow(null);
-            
-            // Wait a moment for auth to process, then check status
-            setTimeout(() => {
-              checkAuthStatus();
-            }, 2000);
-            return;
-          }
-
-          // Try to detect successful auth by checking URL changes
-          try {
-            const popupUrl = popup.location.href;
-            // Check if we've been redirected back to our domain
-            if (popupUrl.includes('localhost') || popupUrl.includes('vercel.app') || popupUrl.includes('herokuapp.com')) {
-              // Auth completed, close popup
-              popup.close();
-              clearInterval(timer);
-              setPollTimer(null);
-              setAuthWindow(null);
-              
-              // Small delay then check auth status
-              setTimeout(() => {
-                checkAuthStatus();
-              }, 1000);
-            }
-          } catch (e) {
-            // Cross-origin error is expected during auth flow - continue polling
-          }
-        } catch (error) {
-          // Handle polling errors gracefully
-          console.log('Popup polling error (normal during auth):', error.message);
-        }
-      }, 1000);
-
-      setPollTimer(timer);
-
-      // Fallback: auto-close after 5 minutes to prevent memory leaks
-      setTimeout(() => {
-        if (popup && !popup.closed) {
-          popup.close();
-          clearInterval(timer);
-          setPollTimer(null);
-          setAuthWindow(null);
-          showNotification('Authentication timed out. Please try again.', 'warning');
-        }
-      }, 300000); // 5 minutes
-
+      // Use the same popup mechanism as login/register
+      const googleAccessToken = await signInWithGoogle();
+      
+      if (googleAccessToken) {
+        showNotification('Google authentication successful! Processing...', 'success');
+        
+        // Now proceed with the upload using the token
+        await checkAuthStatusAndUpload();
+      } else {
+        showNotification('Failed to get Google access token', 'error');
+      }
     } catch (error) {
-      console.error('Error opening auth popup:', error);
-      showNotification('Failed to open authentication window. Please check popup settings.', 'error');
+      console.error('Google auth error:', error);
+      
+      if (error.message.includes('popup_closed_by_user')) {
+        showNotification('Google sign-in was cancelled', 'info');
+      } else if (error.message.includes('access_denied')) {
+        showNotification('Google sign-in access denied', 'error');
+      } else {
+        showNotification('Google sign-in failed. Please try again.', 'error');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatusAndUpload = async () => {
     setLoading(true);
     setUploadStep(3);
     
@@ -161,7 +102,7 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
       
       const result = await projectService.uploadToGoogleDrive(projectId);
       
-      console.log('Auth Check Result:', result);
+      console.log('Upload Result:', result);
       
       if (result.success && result.driveLink) {
         setDriveLink(result.driveLink);
@@ -185,13 +126,14 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
       } else if (result.actionRequired === 'GOOGLE_OAUTH_REQUIRED') {
         // Still need auth - go back to step 2
         setUploadStep(2);
+        setNeedsAuth(true);
         showNotification('Google authentication is still required. Please try again.', 'warning');
       } else {
         showNotification(result.message || 'Upload failed. Please try again.', 'error');
         setUploadStep(2); // Go back to auth step
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
+      console.error('Upload check failed:', error);
       showNotification('Failed to complete upload. Please try again.', 'error');
       setUploadStep(2); // Go back to auth step
     }
@@ -204,15 +146,9 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
     }
   };
 
-  const handleClose = () => {
-    cleanup();
-    onClose();
-  };
-
   const handleRetry = () => {
-    cleanup();
     setUploadStep(1);
-    setAuthUrl('');
+    setNeedsAuth(false);
     setLoading(false);
     setUploadComplete(false);
     setDriveLink('');
@@ -225,12 +161,12 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onClick={(e) => e.target === e.currentTarget && handleClose()}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Upload to Google Drive</h2>
-          <button className="close-button" onClick={handleClose}>×</button>
+          <button className="close-button" onClick={onClose}>×</button>
         </div>
 
         <div className="steps-container">
@@ -252,7 +188,7 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
           {uploadStep === 1 && (
             <div className="step-info">
               <p>Checking your authentication status...</p>
-              {loading && <div className="spinner"></div>}
+              {loading && <LoadingSpinner size="small" message="" />}
             </div>
           )}
 
@@ -262,13 +198,23 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
               <button 
                 className="auth-button"
                 onClick={handleGoogleAuth}
-                disabled={loading || !authUrl}
+                disabled={loading || !isGoogleLoaded}
               >
-                {loading ? '⏳ Processing...' : '🔗 Authenticate with Google'}
+                {loading ? (
+                  <>
+                    <LoadingSpinner size="small" message="" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>🔍</span>
+                    <span>Authenticate with Google</span>
+                  </>
+                )}
               </button>
               <p className="help-text">
-                This will open a new window for Google authentication.
-                Close it after completing the login process.
+                This will open a Google authentication popup.
+                Please complete the login process to continue.
               </p>
             </div>
           )}
@@ -276,7 +222,7 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
           {uploadStep === 3 && (
             <div className="step-info">
               <p>Uploading your project to Google Drive...</p>
-              <div className="spinner"></div>
+              <LoadingSpinner size="small" message="" />
             </div>
           )}
 
@@ -296,7 +242,7 @@ const GoogleDriveUpload = ({ projectId, onUploadComplete, onClose }) => {
         </div>
 
         <div className="modal-footer">
-          <button className="cancel-button" onClick={handleClose}>
+          <button className="cancel-button" onClick={onClose}>
             {uploadComplete ? 'Close' : 'Cancel'}
           </button>
           {uploadStep === 2 && !loading && (
